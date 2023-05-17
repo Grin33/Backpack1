@@ -63,7 +63,7 @@ namespace testtttt
             ,new Loot("9",3000m,16m)
             ,new Loot("10",3000m,15.5m)
             ,new Loot("11",2700m,11m)
-            ,new Loot("12",3500m,39m)
+            //,new Loot("12",3500m,39m)
         };
             return loots;
         }
@@ -87,7 +87,7 @@ namespace testtttt
             var sw1 = Stopwatch.StartNew();
             sw1.Start();
             var back1 = new Backpack(cap.Capacity);
-            back1.parallel_shuffle(loots);
+            back1.Parallel_shuffle(loots);
             var parallel = sw1.Elapsed;
             AnsPrint(back1, parallel);
             sw1.Stop();

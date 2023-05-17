@@ -90,84 +90,74 @@ namespace testtttt
         #endregion Straight_Methods
 
         #region Parallel
-        public void Check_Parallel(ref List<Loot> thread_loots, ref List<Loot> thread_best)
+        public bool Check_Parallel(ref List<Loot> thread_loots, ref List<Loot> thread_best)
         {
-            decimal iteration_weight = 0; decimal thread_best_weight = 0;
+            decimal iteration_weight = 0;
             decimal iteration_value = 0; decimal thread_best_value = 0;
             foreach (Loot oneloot in thread_loots)
             {
                 iteration_value += oneloot.Value;
                 iteration_weight += oneloot.Weight;
             }
-            foreach (Loot oneloot in thread_best)
+            foreach (Loot v in thread_best)
             {
-                thread_best_weight += oneloot.Weight;
-                thread_best_value += oneloot.Value;
+                thread_best_value += v.Value;
             }
-            //if (thread_best_weight > max_weight) { thread_best = new List<Loot>(); }
-            if (iteration_weight <= max_weight)
+            if ((iteration_weight <= max_weight) && (iteration_value > thread_best_value))
             {
-                if ((iteration_value > thread_best_value))
-                {
-                    thread_best = thread_loots;
-                    //return true;
-                }
-                //else
-                    //return false;
+                thread_best = new List<Loot>(thread_loots);
+                return true;
             }
-            //else
-                //return false;
+            else
+                return false;
         }
 
-        public void nested_shuffle(ref List<Loot> loots, List<Loot> thread_iteration_loots, ref List<Loot> thread_best, int item)
+        public void nested_shuffle(ref List<Loot> loots, ref List<Loot> thread_temp, List<Loot> iter_loots, Loot i)
         {
-            var n = item + 1;
-            for (int i = n; i < loots.Count; i++)
+            int v = loots.IndexOf(i) + 1;
+            for(int n = v; n< loots.Count; n++)
             {
-                var thread_iteration_loots1 = new List<Loot>(thread_iteration_loots);
-                thread_iteration_loots1.Add(loots[i]);
-                //if (Check_Parallel(ref thread_iteration_loots1, ref thread_best) == true)
-                //{
-                //    nested_shuffle(ref loots, thread_iteration_loots1, ref thread_best, i);
-                //}
-                Check_Parallel(ref thread_iteration_loots1, ref thread_best);
-                nested_shuffle(ref loots, thread_iteration_loots1, ref thread_best, i);
-            }
-        }
-        public void parallel_shuffle(List<Loot> loots)
-        {
-            //var thread_best = new ThreadLocal<List<Loot>>();
-            Parallel.For(0, loots.Count, () => Most_Valuable, (i, loop, thread_best) =>
-            {
-                thread_best = new List<Loot>() { };
-                var thread_iteration = new List<Loot>() { };
-                thread_iteration.Add(loots[i]);
-                //if (Check_Parallel(ref thread_iteration, ref thread_best) == true)
-                //{
-                //    nested_shuffle(ref loots, thread_iteration, ref thread_best, i);
-                //}
-                Check_Parallel(ref thread_iteration, ref thread_best);
-                nested_shuffle(ref loots, thread_iteration, ref thread_best, i);
-                return thread_best;
-            },
-            (x) =>
-            {
-                decimal thread_best_value = 0;
-                decimal thread_best_weight = 0;
-                foreach (Loot oneloot in x) { thread_best_value += oneloot.Value; thread_best_weight += oneloot.Weight; }
-                lock (locker)
-                {
-                    //PrintLoot(x);
-                    if (best_value < thread_best_value)
-                    {
-                        Most_Valuable = x;
-                        final_weight = thread_best_weight;
-                        best_value = thread_best_value;
-                    }
+                var iter_new_loots = new List<Loot>(iter_loots);
+                iter_new_loots.Add(loots[n]);
+                Check_Parallel(ref iter_new_loots, ref thread_temp);
+                //if (Check_Parallel(ref iter_new_loots, ref thread_temp))
+                    nested_shuffle(ref loots, ref thread_temp, iter_new_loots, loots[n]);
 
-                }
             }
-            );
+
+        }
+
+        public void Parallel_shuffle(List<Loot> loots)
+        {
+            Parallel.ForEach<Loot, List<Loot>>(loots,
+                             () => new List<Loot>(),
+                             (i, loop, thread_temp) =>
+                             {
+                                 var iter_loots = new List<Loot>();
+                                 iter_loots.Add(i);
+
+                                 Check_Parallel(ref iter_loots, ref thread_temp);
+                                 //if (Check_Parallel(ref iter_loots, ref thread_temp))
+                                     nested_shuffle(ref loots, ref thread_temp, iter_loots, i);
+                                 return thread_temp; //передается в следующую итерацию одного потока
+                             },
+                             (thread_final) =>
+                             {
+                                 decimal thread_best_value = 0;
+                                 decimal thread_best_weight = 0;
+                                 foreach (Loot oneloot in thread_final) { thread_best_value += oneloot.Value; thread_best_weight += oneloot.Weight; }
+                                 lock (locker)
+                                 {
+                                     //PrintLoot(thread_final);
+                                     if (best_value < thread_best_value)
+                                     {
+                                         Most_Valuable = thread_final;
+                                         final_weight = thread_best_weight;
+                                         best_value = thread_best_value;
+                                     }
+                                 }
+                             }
+                            );
         }
 
         #endregion Parallel
