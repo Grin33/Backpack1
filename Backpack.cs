@@ -35,7 +35,7 @@ namespace testtttt
         }
 
         #region Straight_Methods
-        public void Check(ref List<Loot> templist)
+        public bool Check(ref List<Loot> templist)
         {
             decimal iteration_weight = 0;
             decimal iteration_value = 0;
@@ -51,13 +51,13 @@ namespace testtttt
                     best_value = iteration_value;
                     Most_Valuable = templist;
                     final_weight = iteration_weight;
-                    //return true;
+                    return true;
                 }
-                //else
-                    //return false;
+                else
+                    return true;
             }
-            //else
-                //return false;
+            else
+                return false;
         }
 
         public void shuffle(ref List<Loot> loots)
@@ -66,10 +66,10 @@ namespace testtttt
             {
                 var templist = new List<Loot>();
                 templist.Add(loots[i]);
-                //if (Check(ref templist))
-                //    shuffle(ref loots, templist, i);
-                Check(ref templist);
-                shuffle(ref loots, templist, i);
+                if (Check(ref templist))
+                    shuffle(ref loots, templist, i);
+                //Check(ref templist);
+                //shuffle(ref loots, templist, i);
             }
 
         }
@@ -81,10 +81,10 @@ namespace testtttt
             {
                 var temploots = new List<Loot>(templist);
                 temploots.Add(loots[i]);
-                //if (Check(ref temploots))
-                //    shuffle(ref loots, temploots, i);
-                Check(ref temploots);
-                shuffle(ref loots, temploots, i);
+                if (Check(ref temploots))
+                    shuffle(ref loots, temploots, i);
+                //Check(ref temploots);
+                //shuffle(ref loots, temploots, i);
             }
         }
         #endregion Straight_Methods
